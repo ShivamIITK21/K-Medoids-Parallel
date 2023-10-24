@@ -3,6 +3,7 @@
 #include<unordered_set>
 #include<limits>
 #include<iostream>
+#include<utility>
 
 class PAM{
 
@@ -21,7 +22,8 @@ class PAM{
 
         void build(){
             int N = data->getSize();
-            // std::cout << "N is" << N << std::endl;
+
+            //selecting the first medoid
             int first_medoid = -1;
             float dist = std::numeric_limits<float>::max();
             for(int i = 0; i < N; i++){
@@ -34,13 +36,12 @@ class PAM{
                     dist = dist_sum;
                 }
             }
-            // std::cout << first_medoid << std::endl;
 
             medoids.insert(first_medoid);
             candidates.erase(first_medoid);
 
+            // selecting the remaining medoids
             while(medoids.size() != k){
-                // if(medoid_candidates.size() > 0) std::cout << *medoid_candidates.begin() << std::endl;
                 int final_candidate = -1;
                 float max_gain = -1 * std::numeric_limits<float>::max();
                 for(auto i : candidates){
@@ -64,5 +65,80 @@ class PAM{
                 candidates.erase(final_candidate);
             }
         }        
+
+        std::pair<float, float> findSmallestandSecondSmallest(std::vector<float>& v){
+            int idx = -1;
+            float smallest = std::numeric_limits<float>::max();
+            for(int i = 0; i < v.size(); i++){
+                if(v[i] < smallest){
+                    smallest = v[i];
+                    idx = i;
+                }
+            }
+
+            float secondSmallest = std::numeric_limits<float>::max();
+            for(int i = 0; i < v.size(); i++){
+                if(i == idx) continue;
+                if(v[i] < secondSmallest) secondSmallest = v[i];
+            }
+
+            return std::make_pair(smallest, secondSmallest);
+        }
+
+        std::pair<float, float> findDE(int i){
+            std::vector<float> clusterDistances;
+            for(auto medoid : medoids){
+                clusterDistances.push_back(data->getEucledianDist(i, medoid));
+            }
+            return findSmallestandSecondSmallest(clusterDistances);
+        }
+
+        void swap(){
+            auto curr_medoids = medoids;
+            while(1){
+                // calculating the Dj and Ej for every j
+                int N = data->getSize();
+                std::vector<float> ds(N), es(N);
+                for(int i = 0; i < N; i++){
+                    auto de = findDE(i);
+                    ds[i] = de.first;
+                    es[i] = de.second;
+                }
+
+                // calculating swap cost for every pair
+                int mincost_h = -1;
+                int mincost_i = -1;
+                float mincost = std::numeric_limits<float>::max(); 
+                for(auto h : candidates){
+                    for(auto i : medoids){
+                        float Tih = 0;
+                        for(auto j : candidates){
+                            if(j == h) continue;
+                            if(data->getEucledianDist(j, i) > ds[j]){
+                                Tih += std::min(data->getEucledianDist(j, h) - ds[j], (float)0);
+                            }
+                            else{
+                                Tih += std::min(data->getEucledianDist(j, h), es[j]) - ds[j];
+                            }
+                        }
+                        if(Tih < mincost){
+                            mincost = Tih;
+                            mincost_h = h;
+                            mincost_i = i;
+                        }
+                    }
+                }
+
+                if(mincost < 0){
+                    candidates.erase(mincost_h);
+                    medoids.erase(mincost_i);
+                    candidates.insert(mincost_i);
+                    medoids.insert(mincost_h);
+                }
+                else{
+                    break;
+                }
+            }
+        }
 
 };
