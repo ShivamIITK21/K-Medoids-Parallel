@@ -43,36 +43,58 @@ class PAM{
             // parallel
             float* res = distanceSumAllPointsWrapper(N, data->getDeviceDistMat());
             for(int i = 0; i < N; i++){
-                std::cout << res[i] << " ";
+                if(res[i] < dist){
+                    first_medoid = i;
+                    dist = res[i];
+                }
             }
+            delete[] res;
 
-            // medoids.insert(first_medoid);
-            // candidates.erase(first_medoid);
+            medoids.insert(first_medoid);
+            candidates.erase(first_medoid);
 
             // selecting the remaining medoids
-            // while(medoids.size() != k){
-            //     int final_candidate = -1;
-            //     float max_gain = -1 * std::numeric_limits<float>::max();
-            //     for(auto i : candidates){
-            //         float gain = 0;
-            //         for(auto j : candidates){
-            //             if(j == i) continue;
-            //             float dissimilariy = std::numeric_limits<float>::max();
-            //             for(auto medoid: medoids) dissimilariy = std::min(dissimilariy, data->getEucledianDist(j, medoid));
-            //             gain += std::max(dissimilariy - data->getEucledianDist(j, i), (float)0);
-            //         }
+            while(medoids.size() != k){
+                int final_candidate = -1;
+                float max_gain = -1 * std::numeric_limits<float>::max();
+                // serial
+                // for(auto i : candidates){
+                //     float gain = 0;
+                //     for(auto j : candidates){
+                //         if(j == i) continue;
+                //         float dissimilariy = std::numeric_limits<float>::max();
+                //         for(auto medoid: medoids) dissimilariy = std::min(dissimilariy, data->getEucledianDist(j, medoid));
+                //         gain += std::max(dissimilariy - data->getEucledianDist(j, i), (float)0);
+                //     }
 
-            //         if(gain > max_gain){
-            //             std::cout << gain << std::endl;
-            //             max_gain = gain;
-            //             final_candidate = i;
-            //         }
+                //     if(gain > max_gain){
+                //         std::cout << gain << std::endl;
+                //         max_gain = gain;
+                //         final_candidate = i;
+                //     }
 
-            //     }
+                // }
 
-            //     medoids.insert(final_candidate);
-            //     candidates.erase(final_candidate);
-            // }
+                //parallel
+                int *h_candidates = set_to_array(candidates);
+                int *h_medoids = set_to_array(medoids);
+
+                float *gains = gainCalculatorWrapper(h_candidates, candidates.size(), h_medoids, medoids.size(), data->getDeviceDistMat(), N);
+
+                for(int i = 0; i < candidates.size(); i++){
+                    if(gains[i] > max_gain){
+                        max_gain = gains[i];
+                        final_candidate = h_candidates[i];
+                    }
+                }
+                free(h_candidates);
+                free(h_medoids);
+                free(gains);
+
+
+                medoids.insert(final_candidate);
+                candidates.erase(final_candidate);
+            }
         }        
 
         std::pair<float, float> findSmallestandSecondSmallest(std::vector<float>& v){
