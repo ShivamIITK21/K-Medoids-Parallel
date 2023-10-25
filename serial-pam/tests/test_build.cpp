@@ -2,45 +2,20 @@
 #include<pam.hpp>
 #include<iostream>
 #include <chrono>
+#include<string>
 
 
-int main(){
-    // (1, 2), (2, 2), (2, 3), (3, 3), (8, 7), (7, 8), (9, 7), (8, 8)
-    // (0, 0), (0, 1), (1, 0), (1, 1), (4, 4), (4, 5), (5, 4), (5, 5)
-    std::vector<Point> points = {
-    Point{0, 0},
-    Point{0, 1},
-    Point{1, 0},
-    Point{1, 1},
-    Point{40, 40},
-    Point{45, 50},
-    Point{51, 40},
-    Point{55, 45},
-    Point{-40, -50},
-    Point{-45, -51},
-    Point{-43, -55},
-    Point{4, 2},
-    Point{4, 3},
-    Point{5, 1},
-    Point{5, 2},
-    Point{5, 3},
-    Point{6, 1},
-    Point{6, 2},
-    Point{6, 3},
-    Point{7, 1}
-    };
-
-
-
-    auto data = new SimpleData("./data/data_bigger.csv");
-    // std::cout << data->getithPoint(0).x << " " << data->getithPoint(0).y << std::endl;
-    auto algo = new PAM(data, 6);
-    // std::cout << "Starting build\n";
+int main(int argc, char* argv[]){
+    if(argc != 3){
+        std::cerr << "Usage ./<executable> <csv path> <k>\n";
+    }
+    auto data = new SimpleData(argv[1]);
+    auto algo = new PAM(data, std::stoi(argv[2]));
     auto start = std::chrono::high_resolution_clock::now();
     algo->build();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Build took " << duration.count() << std::endl;
+    std::cout << "Build took " << duration.count() << " microseconds" << std::endl;
     std::cout << "Initial medoids ";
     for(auto i : algo->medoids){
         std::cout << i << " ";
@@ -51,7 +26,7 @@ int main(){
     algo->swap();
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Swap took " << duration.count() << std::endl;
+    std::cout << "Swap took " << duration.count() << " microseconds" << std::endl;
     std::cout << "Final medoids ";
     for(auto i : algo->medoids){
         std::cout << i << " ";

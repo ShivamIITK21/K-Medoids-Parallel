@@ -1,33 +1,14 @@
 #include<data.cuh>
 #include<pam.cuh>
 #include<chrono>
+#include<string>
 
-int main(){
-    std::vector<Point> points = {
-    Point{0, 0},
-    Point{0, 1},
-    Point{1, 0},
-    Point{1, 1},
-    Point{40, 40},
-    Point{45, 50},
-    Point{51, 40},
-    Point{55, 45},
-    Point{-40, -50},
-    Point{-45, -51},
-    Point{-43, -55},
-    Point{4, 2},
-    Point{4, 3},
-    Point{5, 1},
-    Point{5, 2},
-    Point{5, 3},
-    Point{6, 1},
-    Point{6, 2},
-    Point{6, 3},
-    Point{7, 1}
-    };
-
-    auto data = new SimpleData("./data/data_biggest.csv");
-    auto algo = new PAM(data, 11);
+int main(int argc, char* argv[]){
+    if(argc != 3){
+        std::cerr << "Usage ./<executable> <csv path> <k>\n";
+    }
+    auto data = new SimpleData(argv[1]);
+    auto algo = new PAM(data, std::stoi(argv[2]));
     auto start = std::chrono::high_resolution_clock::now();
     algo->build();
     auto end = std::chrono::high_resolution_clock::now();
