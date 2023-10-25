@@ -169,6 +169,9 @@ class PAM{
                 //     }
                 // }
 
+                cudaFree(d_ds);
+                cudaFree(d_es);
+
                 if(mincost < 0){
                     candidates.erase(mincost_h);
                     medoids.erase(mincost_i);
