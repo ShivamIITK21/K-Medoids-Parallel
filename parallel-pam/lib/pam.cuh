@@ -140,7 +140,7 @@ class PAM{
                     // es[i] = de.second;
                 // }
 
-                // parallel
+                // parallel DE calculation
                 auto d_ptrs = DECalculatorWrapper(medoids, data->getDeviceDistMat(), N);
                 float *d_ds = d_ptrs.first;
                 float *d_es = d_ptrs.second;

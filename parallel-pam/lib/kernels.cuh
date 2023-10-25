@@ -158,3 +158,52 @@ std::pair<float*, float*> DECalculatorWrapper(std::unordered_set<int>& medoids, 
     cudaDeviceSynchronize();
     return std::make_pair(d_ds, d_es);
 }
+
+
+__global__ void TihCalculator(int* d_candidates, size_t num_candidates, int* d_medoids, size_t num_medoids, float* d_Tih, float* d_ds, float* d_es, float* d_distanceMatrix, int N) {
+    int h = threadIdx.x + blockDim.x*blockIdx.x;
+    int i = threadIdx.y + blockDim.y*blockIdx.y;
+    if(h < num_candidates && i < num_medoids){
+        d_Tih[h*num_medoids + i] = 0;
+        for(int j = 0; j < num_candidates; j++){
+            if(d_candidates[j] == d_candidates[h]) continue;
+            if(d_distanceMatrix[d_candidates[j]*N + d_candidates[i]] > d_ds[d_candidates[j]]){
+                d_Tih[h*num_medoids + i] += std::min(d_distanceMatrix[d_candidates[j]*N + d_candidates[h]] - d_ds[d_candidates[j]], (float)0);
+            }
+            else{
+                d_Tih[h*num_medoids + i] += std::min(d_distanceMatrix[d_candidates[j]*N + d_candidates[h]], d_es[d_candidates[j]]) - d_ds[d_candidates[j]];
+            }
+        }
+    }
+}
+
+float* TihCalculatorWrapper(int* h_medoids, size_t num_medoids, int* h_candidates, size_t num_candidates, float* d_ds, float* d_es, float* d_distanceMatrix, int N){
+    // allocate the memory
+    int *d_medoids, *d_candicates;
+    float* h_res, *d_res;
+    h_res = new float[num_medoids*num_candidates];
+    cudaMalloc((void**)&d_medoids, num_medoids*sizeof(int));
+    cudaMalloc((void**)&d_candicates, num_candidates*sizeof(int));
+    cudaMalloc((void**)&d_res, num_medoids*num_candidates*sizeof(float));
+
+
+    // copying to device
+    cudaMemcpy(d_medoids, h_medoids, num_medoids*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_candicates, h_candidates, num_candidates*sizeof(int), cudaMemcpyHostToDevice);
+
+    // Launching the kernel
+    dim3 numBlocks(256, 256);
+    dim3 blockSize((num_candidates + blockSize.x - 1)/blockSize.x, (num_medoids + blockSize.y -1)/blockSize.y);
+    TihCalculator<<<numBlocks, blockSize>>>(d_candicates, num_candidates, d_medoids, num_medoids, d_res, d_ds, d_es, d_distanceMatrix, N);
+    
+    // Copying result to host
+    cudaMemcpy(h_res, d_res, num_candidates*num_medoids*sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Free Unused data
+    cudaFree(d_medoids);
+    cudaFree(d_candicates);
+    cudaFree(d_res);
+
+    cudaDeviceSynchronize();
+    return h_res;
+}
