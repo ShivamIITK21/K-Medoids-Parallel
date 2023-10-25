@@ -97,7 +97,7 @@ class PAM{
             int it = 0;
             while(1){
                 // calculating the Dj and Ej for every j
-                std::cout << ++it << "swap iteration" << std::endl;
+                std::cout << ++it << " swap iteration" << std::endl;
                 int N = data->getSize();
                 std::vector<float> ds(N), es(N);
                 for(int i = 0; i < N; i++){
@@ -105,6 +105,17 @@ class PAM{
                     ds[i] = de.first;
                     es[i] = de.second;
                 }
+
+                // std::cout << "Ds are\n";
+                // for(int i = 0; i < N; i++){
+                //     std::cout << ds[i] << " ";
+                // }
+                // std::cout << std::endl;
+                // std::cout << "Es are\n";
+                // for(int i = 0; i < N; i++){
+                //     std::cout << es[i] << " ";
+                // }
+                // std::cout << std::endl;
 
                 // calculating swap cost for every pair
                 int mincost_h = -1;
@@ -129,6 +140,8 @@ class PAM{
                         }
                     }
                 }
+
+                // std::cout << "Mincost is " << mincost << std::endl;
 
                 if(mincost < 0){
                     candidates.erase(mincost_h);

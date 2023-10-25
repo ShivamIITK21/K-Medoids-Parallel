@@ -38,6 +38,18 @@ int main(){
         std::cout << i << " ";
     }
     std::cout << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();    
+    algo->swap();
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Swap took " << duration.count() << std::endl;
+    std::cout << "Final medoids ";
+    for(auto i : algo->medoids){
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+
     for(auto i : algo->medoids){
         std::cout << data->getithPoint(i).x << " " << data->getithPoint(i).y << std::endl;
     }

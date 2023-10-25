@@ -129,7 +129,7 @@ class PAM{
             int it = 0;
             while(1){
                 // calculating the Dj and Ej for every j
-                std::cout << ++it << "swap iteration" << std::endl;
+                std::cout << ++it << " swap iteration" << std::endl;
                 int N = data->getSize();
 
                 // serial
@@ -145,10 +145,26 @@ class PAM{
                 float *d_ds = d_ptrs.first;
                 float *d_es = d_ptrs.second;
 
-                // serial calculating swap cost for every pair
+                //temp code
+                // float *h_ds = new float[N];
+                // float *h_es = new float[N];
+                // cudaMemcpy(h_ds, d_ds, N*sizeof(float), cudaMemcpyDeviceToHost);
+                // cudaMemcpy(h_es, d_es, N*sizeof(float), cudaMemcpyDeviceToHost);
+                // std::cout << "Ds are\n";
+                // for(int i = 0; i < N; i++){
+                //     std::cout << h_ds[i] << " ";
+                // }
+                // std::cout << std::endl;
+                // std::cout << "Es are\n";
+                // for(int i = 0; i < N; i++){
+                //     std::cout << h_es[i] << " ";
+                // }
+                // std::cout << std::endl;
+
                 int mincost_h = -1;
                 int mincost_i = -1;
                 float mincost = std::numeric_limits<float>::max(); 
+                // serial calculating swap cost for every pair
                 // for(auto h : candidates){
                 //     for(auto i : medoids){
                 //         float Tih = 0;
@@ -169,8 +185,30 @@ class PAM{
                 //     }
                 // }
 
+                // parallel Tih calc
+                int *h_candidates = set_to_array(candidates);
+                int *h_medoids = set_to_array(medoids);
+
+                float* Thi = TihCalculatorWrapper(h_medoids, medoids.size(), h_candidates, candidates.size(), d_ds, d_es, data->getDeviceDistMat(), N);
+
+                std::cout << "Printing Swap gains\n";
+                for(int j = 0; j < medoids.size()*candidates.size(); j++){
+                    // std::cout << Thi[j] << " ";
+                    if(Thi[j] < mincost){
+                        mincost = Thi[j];
+                        mincost_h = h_candidates[j/medoids.size()];
+                        mincost_i = h_medoids[j%medoids.size()];
+                    }
+                }
+                std::cout << std::endl;
+
+                // std::cout << "Mincost is " << mincost << std::endl;
+
                 cudaFree(d_ds);
                 cudaFree(d_es);
+                delete[] h_candidates;
+                delete[] h_medoids;
+                delete[] Thi;
 
                 if(mincost < 0){
                     candidates.erase(mincost_h);

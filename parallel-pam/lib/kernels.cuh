@@ -1,5 +1,7 @@
 #pragma once
 
+#include<stdio.h>
+
 __global__ void distamceSumAllPoints(int N, float* d_distanceMatrix, float* d_res){
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     if(i < N){
@@ -86,51 +88,40 @@ float* gainCalculatorWrapper(int* h_candidates, size_t num_candidates, int* h_me
 }
 
 
-// ! frees the input array !
-__device__ float* findSmallestandSecondSmallest(float* v, size_t n){
-    float *d_res;
-    cudaMalloc((void**)&d_res, 2*sizeof(float));
-
-    int idx = -1;
-    float smallest = std::numeric_limits<float>::max();
-    for(int i = 0; i < n; i++){
-        if(v[i] < smallest){
-            smallest = v[i];
-            idx = i;
-        }
-    }
-
-    float secondSmallest = std::numeric_limits<float>::max();
-    for(int i = 0; i < n; i++){
-        if(i == idx) continue;
-        if(v[i] < secondSmallest) secondSmallest = v[i];
-    }
-
-    d_res[0] = smallest;
-    d_res[1] = secondSmallest;
-    cudaFree(v);
-
-    return d_res;
-}
-
-__device__ float* findDE(int i, int* medoids, size_t num_medoids, float *d_distaneMatrix, int N){
-    float *d_clusterDistances;
-    cudaMalloc((void**)&d_clusterDistances, num_medoids*sizeof(float));
-
-    for(int j = 0; j < num_medoids; j++){
-        d_clusterDistances[j] = d_distaneMatrix[i*N + medoids[j]];
-    }
-
-    return findSmallestandSecondSmallest(d_clusterDistances, num_medoids);
-}
-
 __global__ void DECalculator(int* d_medoids, size_t num_medoids, float* d_ds, float* d_es, float* d_distanceMatrix, int N){
     int i = threadIdx.x + blockDim.x*blockIdx.x;
     if(i < N){
-        float* res = findDE(i, d_medoids, num_medoids, d_distanceMatrix, N);
-        d_ds[i] = res[0];
-        d_es[i] = res[1];
-        cudaFree(res);
+        // float* res = findDE(i, d_medoids, num_medoids, d_distanceMatrix, N);
+        // __syncthreads();
+        d_ds[i] = 1;
+        d_es[i] = 2;
+        // cudaFree(res);
+
+        float *d_clusterDistances = (float*)malloc(num_medoids*sizeof(float));
+
+        for(int j = 0; j < num_medoids; j++){
+            d_clusterDistances[j] = d_distanceMatrix[i*N + d_medoids[j]];
+        }
+
+        int idx = 0;
+        float smallest = std::numeric_limits<float>::max();
+        for(int j = 0; j < num_medoids; j++){
+            if(d_clusterDistances[j] < smallest){
+                smallest = d_clusterDistances[j];
+                idx = j;
+            }
+        }
+        
+        float secondSmallest = std::numeric_limits<float>::max();
+        for(int j = 0; j < num_medoids; j++){
+            if(j == idx) continue;
+            if(d_clusterDistances[j] < secondSmallest){
+                secondSmallest = d_clusterDistances[j];
+            }
+        }
+        free(d_clusterDistances);
+        d_ds[i] = smallest;
+        d_es[i] = secondSmallest;
     }
 }
 
@@ -167,7 +158,7 @@ __global__ void TihCalculator(int* d_candidates, size_t num_candidates, int* d_m
         d_Tih[h*num_medoids + i] = 0;
         for(int j = 0; j < num_candidates; j++){
             if(d_candidates[j] == d_candidates[h]) continue;
-            if(d_distanceMatrix[d_candidates[j]*N + d_candidates[i]] > d_ds[d_candidates[j]]){
+            if(d_distanceMatrix[d_candidates[j]*N + d_medoids[i]] > d_ds[d_candidates[j]]){
                 d_Tih[h*num_medoids + i] += std::min(d_distanceMatrix[d_candidates[j]*N + d_candidates[h]] - d_ds[d_candidates[j]], (float)0);
             }
             else{
@@ -192,8 +183,8 @@ float* TihCalculatorWrapper(int* h_medoids, size_t num_medoids, int* h_candidate
     cudaMemcpy(d_candicates, h_candidates, num_candidates*sizeof(int), cudaMemcpyHostToDevice);
 
     // Launching the kernel
-    dim3 numBlocks(256, 256);
-    dim3 blockSize((num_candidates + blockSize.x - 1)/blockSize.x, (num_medoids + blockSize.y -1)/blockSize.y);
+    dim3 blockSize(16, 16);
+    dim3 numBlocks((num_candidates + blockSize.x - 1)/blockSize.x, (num_medoids + blockSize.y -1)/blockSize.y);
     TihCalculator<<<numBlocks, blockSize>>>(d_candicates, num_candidates, d_medoids, num_medoids, d_res, d_ds, d_es, d_distanceMatrix, N);
     
     // Copying result to host
