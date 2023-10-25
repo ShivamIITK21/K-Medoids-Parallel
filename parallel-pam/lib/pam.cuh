@@ -132,58 +132,15 @@ class PAM{
                 std::cout << ++it << " swap iteration" << std::endl;
                 int N = data->getSize();
 
-                // serial
-                // std::vector<float> ds(N), es(N);
-                // for(int i = 0; i < N; i++){
-                    // auto de = findDE(i);
-                    // ds[i] = de.first;
-                    // es[i] = de.second;
-                // }
-
                 // parallel DE calculation
                 auto d_ptrs = DECalculatorWrapper(medoids, data->getDeviceDistMat(), N);
                 float *d_ds = d_ptrs.first;
                 float *d_es = d_ptrs.second;
 
-                //temp code
-                // float *h_ds = new float[N];
-                // float *h_es = new float[N];
-                // cudaMemcpy(h_ds, d_ds, N*sizeof(float), cudaMemcpyDeviceToHost);
-                // cudaMemcpy(h_es, d_es, N*sizeof(float), cudaMemcpyDeviceToHost);
-                // std::cout << "Ds are\n";
-                // for(int i = 0; i < N; i++){
-                //     std::cout << h_ds[i] << " ";
-                // }
-                // std::cout << std::endl;
-                // std::cout << "Es are\n";
-                // for(int i = 0; i < N; i++){
-                //     std::cout << h_es[i] << " ";
-                // }
-                // std::cout << std::endl;
-
                 int mincost_h = -1;
                 int mincost_i = -1;
                 float mincost = std::numeric_limits<float>::max(); 
-                // serial calculating swap cost for every pair
-                // for(auto h : candidates){
-                //     for(auto i : medoids){
-                //         float Tih = 0;
-                //         for(auto j : candidates){
-                //             if(j == h) continue;
-                //             if(data->getEucledianDist(j, i) > ds[j]){
-                //                 Tih += std::min(data->getEucledianDist(j, h) - ds[j], (float)0);
-                //             }
-                //             else{
-                //                 Tih += std::min(data->getEucledianDist(j, h), es[j]) - ds[j];
-                //             }
-                //         }
-                //         if(Tih < mincost){
-                //             mincost = Tih;
-                //             mincost_h = h;
-                //             mincost_i = i;
-                //         }
-                //     }
-                // }
+       
 
                 // parallel Tih calc
                 int *h_candidates = set_to_array(candidates);
@@ -193,7 +150,6 @@ class PAM{
 
                 std::cout << "Printing Swap gains\n";
                 for(int j = 0; j < medoids.size()*candidates.size(); j++){
-                    // std::cout << Thi[j] << " ";
                     if(Thi[j] < mincost){
                         mincost = Thi[j];
                         mincost_h = h_candidates[j/medoids.size()];
@@ -202,7 +158,6 @@ class PAM{
                 }
                 std::cout << std::endl;
 
-                // std::cout << "Mincost is " << mincost << std::endl;
 
                 cudaFree(d_ds);
                 cudaFree(d_es);
