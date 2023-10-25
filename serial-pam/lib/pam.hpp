@@ -95,8 +95,10 @@ class PAM{
 
         void swap(){
             auto curr_medoids = medoids;
+            int it = 0;
             while(1){
                 // calculating the Dj and Ej for every j
+                std::cout << ++it << "swap iteration" << std::endl;
                 int N = data->getSize();
                 std::vector<float> ds(N), es(N);
                 for(int i = 0; i < N; i++){
