@@ -134,6 +134,27 @@ __global__ void DECalculator(int* d_medoids, size_t num_medoids, float* d_ds, fl
     }
 }
 
-std::pair<float*, float*> DECalculatorWrapper(){
-    
+std::pair<float*, float*> DECalculatorWrapper(std::unordered_set<int>& medoids, float* d_distanceMatrix, int N){
+    // allocate memory
+    int* h_medoids = set_to_array(medoids);
+    int* d_medoids;
+    float *d_ds, *d_es;
+    cudaMalloc((void**)&d_medoids, medoids.size()*sizeof(int));
+    cudaMalloc((void**)&d_ds, N*sizeof(float));
+    cudaMalloc((void**)&d_es, N*sizeof(float));
+
+    // copy to device
+    cudaMemcpy(d_medoids, h_medoids, medoids.size()*sizeof(int), cudaMemcpyHostToDevice);
+
+    // launch the kernel
+    int blockSize = 256;
+    int numBlocks = (N + blockSize - 1)/blockSize;
+    DECalculator<<<numBlocks, blockSize>>>(d_medoids, medoids.size(), d_ds, d_es, d_distanceMatrix, N);
+
+    // free memeory
+    delete[] h_medoids;
+    cudaFree(d_medoids);
+
+    cudaDeviceSynchronize();
+    return std::make_pair(d_ds, d_es);
 }

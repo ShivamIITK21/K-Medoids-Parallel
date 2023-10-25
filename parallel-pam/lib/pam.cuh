@@ -131,36 +131,43 @@ class PAM{
                 // calculating the Dj and Ej for every j
                 std::cout << ++it << "swap iteration" << std::endl;
                 int N = data->getSize();
-                std::vector<float> ds(N), es(N);
-                for(int i = 0; i < N; i++){
-                    auto de = findDE(i);
-                    ds[i] = de.first;
-                    es[i] = de.second;
-                }
 
-                // calculating swap cost for every pair
+                // serial
+                // std::vector<float> ds(N), es(N);
+                // for(int i = 0; i < N; i++){
+                    // auto de = findDE(i);
+                    // ds[i] = de.first;
+                    // es[i] = de.second;
+                // }
+
+                // parallel
+                auto d_ptrs = DECalculatorWrapper(medoids, data->getDeviceDistMat(), N);
+                float *d_ds = d_ptrs.first;
+                float *d_es = d_ptrs.second;
+
+                // serial calculating swap cost for every pair
                 int mincost_h = -1;
                 int mincost_i = -1;
                 float mincost = std::numeric_limits<float>::max(); 
-                for(auto h : candidates){
-                    for(auto i : medoids){
-                        float Tih = 0;
-                        for(auto j : candidates){
-                            if(j == h) continue;
-                            if(data->getEucledianDist(j, i) > ds[j]){
-                                Tih += std::min(data->getEucledianDist(j, h) - ds[j], (float)0);
-                            }
-                            else{
-                                Tih += std::min(data->getEucledianDist(j, h), es[j]) - ds[j];
-                            }
-                        }
-                        if(Tih < mincost){
-                            mincost = Tih;
-                            mincost_h = h;
-                            mincost_i = i;
-                        }
-                    }
-                }
+                // for(auto h : candidates){
+                //     for(auto i : medoids){
+                //         float Tih = 0;
+                //         for(auto j : candidates){
+                //             if(j == h) continue;
+                //             if(data->getEucledianDist(j, i) > ds[j]){
+                //                 Tih += std::min(data->getEucledianDist(j, h) - ds[j], (float)0);
+                //             }
+                //             else{
+                //                 Tih += std::min(data->getEucledianDist(j, h), es[j]) - ds[j];
+                //             }
+                //         }
+                //         if(Tih < mincost){
+                //             mincost = Tih;
+                //             mincost_h = h;
+                //             mincost_i = i;
+                //         }
+                //     }
+                // }
 
                 if(mincost < 0){
                     candidates.erase(mincost_h);
