@@ -32,9 +32,9 @@ int main(){
 
 
 
-    auto data = new SimpleData("./data/data_bigger.csv");
+    auto data = new SimpleData("./data/data_biggest.csv");
     // std::cout << data->getithPoint(0).x << " " << data->getithPoint(0).y << std::endl;
-    auto algo = new PAM(data, 6);
+    auto algo = new PAM(data, 11);
     // std::cout << "Starting build\n";
     auto start = std::chrono::high_resolution_clock::now();
     algo->build();

@@ -26,8 +26,8 @@ int main(){
     Point{7, 1}
     };
 
-    auto data = new SimpleData("./data/data_bigger.csv");
-    auto algo = new PAM(data, 6);
+    auto data = new SimpleData("./data/data_biggest.csv");
+    auto algo = new PAM(data, 11);
     auto start = std::chrono::high_resolution_clock::now();
     algo->build();
     auto end = std::chrono::high_resolution_clock::now();

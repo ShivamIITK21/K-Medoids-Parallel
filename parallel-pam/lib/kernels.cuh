@@ -84,3 +84,56 @@ float* gainCalculatorWrapper(int* h_candidates, size_t num_candidates, int* h_me
 
     return h_res;
 }
+
+
+// ! frees the input array !
+__device__ float* findSmallestandSecondSmallest(float* v, size_t n){
+    float *d_res;
+    cudaMalloc((void**)&d_res, 2*sizeof(float));
+
+    int idx = -1;
+    float smallest = std::numeric_limits<float>::max();
+    for(int i = 0; i < n; i++){
+        if(v[i] < smallest){
+            smallest = v[i];
+            idx = i;
+        }
+    }
+
+    float secondSmallest = std::numeric_limits<float>::max();
+    for(int i = 0; i < n; i++){
+        if(i == idx) continue;
+        if(v[i] < secondSmallest) secondSmallest = v[i];
+    }
+
+    d_res[0] = smallest;
+    d_res[1] = secondSmallest;
+    cudaFree(v);
+
+    return d_res;
+}
+
+__device__ float* findDE(int i, int* medoids, size_t num_medoids, float *d_distaneMatrix, int N){
+    float *d_clusterDistances;
+    cudaMalloc((void**)&d_clusterDistances, num_medoids*sizeof(float));
+
+    for(int j = 0; j < num_medoids; j++){
+        d_clusterDistances[j] = d_distaneMatrix[i*N + medoids[j]];
+    }
+
+    return findSmallestandSecondSmallest(d_clusterDistances, num_medoids);
+}
+
+__global__ void DECalculator(int* d_medoids, size_t num_medoids, float* d_ds, float* d_es, float* d_distanceMatrix, int N){
+    int i = threadIdx.x + blockDim.x*blockIdx.x;
+    if(i < N){
+        float* res = findDE(i, d_medoids, num_medoids, d_distanceMatrix, N);
+        d_ds[i] = res[0];
+        d_es[i] = res[1];
+        cudaFree(res);
+    }
+}
+
+std::pair<float*, float*> DECalculatorWrapper(){
+    
+}
