@@ -91,13 +91,13 @@ class SimpleData{
                 }
             }
 
-            std::cout << "Distance matrix on Host initialized\n";
-            for(int i = 0; i < N; i++){
-                for(int j = 0; j < N; j++){
-                    std::cout << h_matrix[i*N+j] << " ";
-                }
-                std::cout << std::endl;
-            } 
+            // std::cout << "Distance matrix on Host initialized\n";
+            // for(int i = 0; i < N; i++){
+            //     for(int j = 0; j < N; j++){
+            //         std::cout << h_matrix[i*N+j] << " ";
+            //     }
+            //     std::cout << std::endl;
+            // } 
         }
 
         void allocateDistanceMatrixGPU(){

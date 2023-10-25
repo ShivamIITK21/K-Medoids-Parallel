@@ -54,7 +54,6 @@ class PAM{
                     }
 
                     if(gain > max_gain){
-                        std::cout << gain << std::endl;
                         max_gain = gain;
                         final_candidate = i;
                     }

@@ -87,9 +87,9 @@ class PAM{
                         final_candidate = h_candidates[i];
                     }
                 }
-                free(h_candidates);
-                free(h_medoids);
-                free(gains);
+                delete[] h_candidates;
+                delete[] h_medoids;
+                delete[] gains;
 
 
                 medoids.insert(final_candidate);
